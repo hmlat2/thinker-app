@@ -1,31 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Font Imports - Using Inter as fallback for RoxboroughCF and Nourd */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Source+Sans+Pro:wght@300;400;500;600&display=swap');
 
 @layer base {
   html {
     scroll-behavior: smooth;
   }
+  
+  body {
+    font-family: 'Source Sans Pro', 'Inter', sans-serif;
+    color: #102542;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Crimson Text', 'Inter', serif;
+    font-weight: 600;
+  }
 }
 
 @layer components {
-  .bg-grid-pattern {
-    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
+  .font-header {
+    font-family: 'Crimson Text', 'Inter', serif;
+  }
+  
+  .font-body {
+    font-family: 'Source Sans Pro', 'Inter', sans-serif;
+  }
+  
+  .bg-subtle-pattern {
+    background-image: radial-gradient(circle at 1px 1px, rgba(114, 155, 121, 0.1) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+  
+  .text-gradient {
+    background: linear-gradient(135deg, #729B79 0%, #475B63 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-[#729B79] to-[#475B63] text-white font-medium px-6 py-3 rounded-lg hover:from-[#5d7f63] hover:to-[#3a4a52] transition-all duration-200 transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-[#BACDB0] text-[#475B63] font-medium px-6 py-3 rounded-lg hover:bg-[#a8c09d] transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-[#F3E8EE] hover:shadow-md transition-all duration-200;
   }
 }
 
 @layer utilities {
-  .animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
   }
   
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
     }
-    50% {
-      opacity: .8;
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3E8EE;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #BACDB0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #729B79;
 }
