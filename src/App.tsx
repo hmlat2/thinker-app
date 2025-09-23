@@ -31,7 +31,7 @@ function App() {
               <img 
                 src="/thinker-logo.png" 
                 alt="Thinker Logo" 
-                className="h-10 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <div className="hidden md:flex items-center space-x-8">
