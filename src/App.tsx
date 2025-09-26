@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Brain, BookOpen, Clock, Users, ArrowRight, CheckCircle, Mail, Upload, Target, Lightbulb, Award, TrendingUp } from 'lucide-react';
 import ContentProcessor from './components/ContentProcessor';
+import Dashboard from './components/Dashboard';
+import ReminderSystem from './components/ReminderSystem';
+import { initializeSampleData } from './utils/sampleData';
 
 function App() {
   const [email, setEmail] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('waitlist');
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [currentView, setCurrentView] = useState<'landing' | 'processor'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'processor' | 'dashboard'>('landing');
+
+  // Initialize sample data on first load
+  useEffect(() => {
+    initializeSampleData();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +29,13 @@ function App() {
     return <ContentProcessor />;
   }
 
+  if (currentView === 'dashboard') {
+    return <Dashboard />;
+  }
+
   return (
     <div className="min-h-screen bg-brand-light">
+      <ReminderSystem />
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-sm border-b border-brand-light sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,6 +53,12 @@ function App() {
                 className="text-brand-slate hover:text-brand-green transition-colors font-body"
               >
                 Home
+              </button>
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="text-brand-slate hover:text-brand-green transition-colors font-body"
+              >
+                Study Dashboard
               </button>
               <button 
                 onClick={() => setCurrentView('processor')}
@@ -83,11 +102,11 @@ function App() {
                 <div className="flex flex-col space-y-3">
                   <button
                     type="button"
-                    onClick={() => setCurrentView('processor')}
+                    onClick={() => setCurrentView('dashboard')}
                     className="px-8 py-4 bg-gradient-to-r from-brand-green to-brand-slate text-white rounded-lg hover:from-brand-green/90 hover:to-brand-slate/90 transition-all duration-200 flex items-center justify-center space-x-2 transform hover:scale-105 mb-4 font-body font-medium"
                   >
-                    <Upload className="w-5 h-5" />
-                    <span>Try Content Processor Demo</span>
+                    <Brain className="w-5 h-5" />
+                    <span>Start Studying Now</span>
                   </button>
                   
                   <select 
@@ -352,6 +371,12 @@ function App() {
                 className="hover:text-white transition-colors font-body"
               >
                 Home
+              </button>
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="hover:text-white transition-colors font-body"
+              >
+                Study Dashboard
               </button>
               <button 
                 onClick={() => setCurrentView('processor')}
