@@ -1,223 +1,255 @@
 import React, { useState } from 'react';
-import { 
-  Brain, 
-  BookOpen, 
-  Clock, 
-  TrendingUp, 
-  Plus, 
-  FolderOpen,
-  Target,
-  Calendar,
-  BarChart3,
-  Settings
-} from 'lucide-react';
-import { Subject, StudyMaterial, StudySession, StudyMethod } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { STUDY_METHODS, calculateMasteryLevel, generateStudyPlan } from '../utils/studyMethods';
-import SubjectCard from './SubjectCard';
-import StudyMethodSelector from './StudyMethodSelector';
-import ProgressTracker from './ProgressTracker';
-import StudySessionModal from './StudySessionModal';
-import AddSubjectModal from './AddSubjectModal';
+import { Brain, BookOpen, FileText, Calendar, Target, BarChart3, Settings, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import ClassManager from './ClassManager';
+import StudyMaterialsView from './StudyMaterialsView';
+import NoteSummarizer from './NoteSummarizer';
+import FlashcardSystem from './FlashcardSystem';
+import StudyScheduler from './StudyScheduler';
+import UserMenu from './UserMenu';
 
 const Dashboard: React.FC = () => {
-  const [subjects, setSubjects] = useLocalStorage<Subject[]>('subjects', []);
-  const [materials, setMaterials] = useLocalStorage<StudyMaterial[]>('materials', []);
-  const [sessions, setSessions] = useLocalStorage<StudySession[]>('sessions', []);
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [showAddSubject, setShowAddSubject] = useState(false);
-  const [showStudySession, setShowStudySession] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<StudyMethod | null>(null);
+  const { user } = useAuth();
+  const [currentView, setCurrentView] = useState<'dashboard' | 'classes' | 'materials' | 'summarizer' | 'flashcards' | 'scheduler'>('dashboard');
 
-  const totalStudyTime = sessions.reduce((acc, session) => acc + session.duration, 0);
-  const totalSessions = sessions.length;
-  const averageScore = sessions.length > 0 
-    ? Math.round(sessions.reduce((acc, session) => acc + (session.score || 0), 0) / sessions.length)
-    : 0;
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'classes', label: 'My Classes', icon: BookOpen },
+    { id: 'materials', label: 'Study Materials', icon: FileText },
+    { id: 'summarizer', label: 'Note Summarizer', icon: Brain },
+    { id: 'flashcards', label: 'Flashcards', icon: Target },
+    { id: 'scheduler', label: 'Study Planner', icon: Calendar },
+  ];
 
-  const todaySessions = sessions.filter(session => {
-    const today = new Date();
-    const sessionDate = new Date(session.startTime);
-    return sessionDate.toDateString() === today.toDateString();
-  });
-
-  const handleStartStudy = (method: StudyMethod) => {
-    setSelectedMethod(method);
-    setShowStudySession(true);
-  };
-
-  const handleAddSubject = (subject: Omit<Subject, 'id' | 'createdAt' | 'totalStudyTime' | 'masteryLevel'>) => {
-    const newSubject: Subject = {
-      ...subject,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      totalStudyTime: 0,
-      masteryLevel: 0
-    };
-    setSubjects(prev => [...prev, newSubject]);
-    setShowAddSubject(false);
-  };
-
-  const handleCompleteSession = (session: Omit<StudySession, 'id' | 'startTime' | 'duration'>) => {
-    const newSession: StudySession = {
-      ...session,
-      id: Date.now().toString(),
-      startTime: new Date(),
-      duration: 0 // Will be calculated when session ends
-    };
-    setSessions(prev => [...prev, newSession]);
-    setShowStudySession(false);
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'classes':
+        return <ClassManager />;
+      case 'materials':
+        return <StudyMaterialsView />;
+      case 'summarizer':
+        return <NoteSummarizer />;
+      case 'flashcards':
+        return <FlashcardSystem />;
+      case 'scheduler':
+        return <StudyScheduler />;
+      default:
+        return <DashboardHome />;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-light via-white to-brand-sage/20">
+    <div className="min-h-screen bg-gradient-to-br from-brand-light via-white to-brand-sage/20 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-brand-sage/20 flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-brand-sage/20">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/thinker-logo.png" 
+              alt="Thinker Logo" 
+              className="h-10 w-auto"
+            />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id as any)}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors font-body ${
+                    currentView === item.id
+                      ? 'bg-brand-green text-white'
+                      : 'text-brand-slate hover:bg-brand-light/50 hover:text-brand-navy'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* User Menu */}
+        <div className="p-4 border-t border-brand-sage/20">
+          <UserMenu />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          {renderCurrentView()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Home Component
+const DashboardHome: React.FC = () => {
+  const { user } = useAuth();
+
+  return (
+    <div className="space-y-8">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-brand-light sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/thinker-logo.png" 
-                alt="Thinker Logo" 
-                className="h-16 w-auto"
-              />
-              <div>
-                <h1 className="text-2xl font-header font-bold text-brand-navy">Study Dashboard</h1>
-                <p className="text-brand-slate text-sm font-body">Science-backed learning for long-term retention</p>
-              </div>
+      <div>
+        <h1 className="text-4xl font-header font-bold text-brand-navy mb-2">
+          Welcome back, {user?.user_metadata?.username || 'Student'}!
+        </h1>
+        <p className="text-xl text-brand-slate font-body">
+          Ready to continue your learning journey? Let's make today productive.
+        </p>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-brand-slate text-sm font-body">Classes</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">5</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-brand-slate hover:text-brand-green transition-colors">
-                <Settings className="w-6 h-6" />
-              </button>
+            <BookOpen className="w-8 h-8 text-brand-green" />
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-brand-slate text-sm font-body">Study Materials</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">23</p>
+            </div>
+            <FileText className="w-8 h-8 text-brand-green" />
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-brand-slate text-sm font-body">Flashcard Sets</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">8</p>
+            </div>
+            <Target className="w-8 h-8 text-brand-green" />
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-brand-slate text-sm font-body">Study Streak</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">12 days</p>
+            </div>
+            <Calendar className="w-8 h-8 text-brand-green" />
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="card p-8">
+        <h2 className="text-2xl font-header font-bold text-brand-navy mb-6">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-brand-sage/10 rounded-xl hover:bg-brand-sage/20 transition-colors cursor-pointer">
+            <div className="w-12 h-12 bg-brand-green/20 rounded-xl flex items-center justify-center mb-4">
+              <Brain className="w-6 h-6 text-brand-green" />
+            </div>
+            <h3 className="text-lg font-header font-semibold text-brand-navy mb-2">
+              Summarize Notes
+            </h3>
+            <p className="text-brand-slate font-body text-sm">
+              Paste your notes and get AI-powered summaries for better retention
+            </p>
+          </div>
+
+          <div className="p-6 bg-brand-sage/10 rounded-xl hover:bg-brand-sage/20 transition-colors cursor-pointer">
+            <div className="w-12 h-12 bg-brand-green/20 rounded-xl flex items-center justify-center mb-4">
+              <Target className="w-6 h-6 text-brand-green" />
+            </div>
+            <h3 className="text-lg font-header font-semibold text-brand-navy mb-2">
+              Study Flashcards
+            </h3>
+            <p className="text-brand-slate font-body text-sm">
+              Practice with spaced repetition flashcards for long-term memory
+            </p>
+          </div>
+
+          <div className="p-6 bg-brand-sage/10 rounded-xl hover:bg-brand-sage/20 transition-colors cursor-pointer">
+            <div className="w-12 h-12 bg-brand-green/20 rounded-xl flex items-center justify-center mb-4">
+              <Calendar className="w-6 h-6 text-brand-green" />
+            </div>
+            <h3 className="text-lg font-header font-semibold text-brand-navy mb-2">
+              Plan Study Session
+            </h3>
+            <p className="text-brand-slate font-body text-sm">
+              Schedule focused study sessions and track your goals
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="card p-8">
+        <h2 className="text-2xl font-header font-bold text-brand-navy mb-6">Recent Activity</h2>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
+            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
+              <Brain className="w-5 h-5 text-brand-green" />
+            </div>
+            <div className="flex-1">
+              <p className="font-body font-medium text-brand-navy">
+                Summarized "Introduction to Organic Chemistry"
+              </p>
+              <p className="text-brand-slate/70 text-sm font-body">2 hours ago</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
+            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
+              <Target className="w-5 h-5 text-brand-green" />
+            </div>
+            <div className="flex-1">
+              <p className="font-body font-medium text-brand-navy">
+                Completed flashcard session: Biology Terms
+              </p>
+              <p className="text-brand-slate/70 text-sm font-body">5 hours ago</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
+            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-brand-green" />
+            </div>
+            <div className="flex-1">
+              <p className="font-body font-medium text-brand-navy">
+                Created new class: Advanced Mathematics
+              </p>
+              <p className="text-brand-slate/70 text-sm font-body">1 day ago</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-brand-slate text-sm font-body">Total Study Time</p>
-                <p className="text-2xl font-header font-bold text-brand-navy">
-                  {Math.round(totalStudyTime / 60)}h {totalStudyTime % 60}m
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-brand-green" />
-            </div>
-          </div>
+      {/* Study Tips */}
+      <div className="card p-8 bg-gradient-to-r from-brand-sage/10 to-brand-green/10">
+        <h2 className="text-2xl font-header font-bold text-brand-navy mb-4">
+          💡 Today's Study Tip
+        </h2>
+        <p className="text-brand-slate font-body leading-relaxed">
+          <strong>Spaced Repetition:</strong> Review material at increasing intervals (1 day, 3 days, 1 week, 2 weeks) 
+          to move information from short-term to long-term memory. This technique can improve retention by up to 200%!
+        </p>
+      </div>
+    </div>
+  );
+};
 
-          <div className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-brand-slate text-sm font-body">Sessions Completed</p>
-                <p className="text-2xl font-header font-bold text-brand-navy">{totalSessions}</p>
-              </div>
-              <Target className="w-8 h-8 text-brand-green" />
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-brand-slate text-sm font-body">Average Score</p>
-                <p className="text-2xl font-header font-bold text-brand-navy">{averageScore}%</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-brand-green" />
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-brand-slate text-sm font-body">Today's Sessions</p>
-                <p className="text-2xl font-header font-bold text-brand-navy">{todaySessions.length}</p>
-              </div>
-              <Calendar className="w-8 h-8 text-brand-green" />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Subjects Section */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-header font-bold text-brand-navy flex items-center">
-                <FolderOpen className="w-6 h-6 mr-3 text-brand-green" />
-                Your Subjects
-              </h2>
-              <button
-                onClick={() => setShowAddSubject(true)}
-                className="btn-primary flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Subject
-              </button>
-            </div>
-
-            {subjects.length === 0 ? (
-              <div className="card p-12 text-center">
-                <BookOpen className="w-16 h-16 text-brand-slate/50 mx-auto mb-4" />
-                <h3 className="text-xl font-header font-semibold text-brand-navy mb-2">
-                  No subjects yet
-                </h3>
-                <p className="text-brand-slate font-body mb-6">
-                  Create your first subject to start organizing your study materials
-                </p>
-                <button
-                  onClick={() => setShowAddSubject(true)}
-                  className="btn-primary"
-                >
-                  Create First Subject
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {subjects.map(subject => (
-                  <SubjectCard
-                    key={subject.id}
-                    subject={subject}
-                    materials={materials.filter(m => m.subjectId === subject.id)}
-                    sessions={sessions.filter(s => s.subjectId === subject.id)}
-                    onSelect={() => setSelectedSubject(subject.id)}
-                    isSelected={selectedSubject === subject.id}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Study Methods & Progress */}
-          <div className="space-y-8">
-            {/* Study Methods */}
-            <div>
-              <h2 className="text-xl font-header font-bold text-brand-navy mb-4 flex items-center">
-                <Brain className="w-5 h-5 mr-2 text-brand-green" />
-                Study Methods
-              </h2>
-              <div className="space-y-3">
-                {STUDY_METHODS.map(method => (
-                  <button
-                    key={method.method}
-                    onClick={() => handleStartStudy(method.method)}
-                    className="w-full p-4 bg-white rounded-lg border border-brand-sage/20 hover:border-brand-green hover:shadow-md transition-all duration-200 text-left"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{method.icon}</span>
-                      <div className="flex-1">
-                        <h3 className="font-header font-semibold text-brand-navy">{method.name}</h3>
-                        <p className="text-sm text-brand-slate font-body">{method.description}</p>
-                        <p className="text-xs text-brand-slate/70 font-body mt-1">
-                          ~{method.estimatedDuration} min
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+export default Dashboard;
             </div>
 
             {/* Progress Tracker */}
