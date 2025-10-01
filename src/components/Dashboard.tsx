@@ -250,36 +250,3 @@ const DashboardHome: React.FC = () => {
 };
 
 export default Dashboard;
-            </div>
-
-            {/* Progress Tracker */}
-            <ProgressTracker subjects={subjects} sessions={sessions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Modals */}
-      {showAddSubject && (
-        <AddSubjectModal
-          onClose={() => setShowAddSubject(false)}
-          onAdd={handleAddSubject}
-        />
-      )}
-
-      {showStudySession && selectedMethod && (
-        <StudySessionModal
-          method={selectedMethod}
-          subjects={subjects}
-          materials={materials}
-          onClose={() => {
-            setShowStudySession(false);
-            setSelectedMethod(null);
-          }}
-          onComplete={handleCompleteSession}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Dashboard;
