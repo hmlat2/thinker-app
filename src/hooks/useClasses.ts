@@ -28,20 +28,31 @@ export const useClasses = () => {
   };
 
   const createClass = async (classData: Omit<StudyClass, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return null;
+    if (!user) {
+      console.error('No user found when creating class');
+      return null;
+    }
 
     try {
+      console.log('Creating class with data:', { ...classData, user_id: user.id });
+
       const { data, error } = await supabase
         .from('study_classes')
         .insert([{ ...classData, user_id: user.id }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Class created successfully:', data);
       setClasses(prev => [data, ...prev]);
       return data;
     } catch (error) {
       console.error('Error creating class:', error);
+      alert(`Failed to create class: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }
   };

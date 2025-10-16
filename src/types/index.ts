@@ -5,7 +5,11 @@ export interface StudyClass {
   name: string;
   description?: string;
   color: string;
+  icon?: string;
   user_id: string;
+  total_study_time?: number;
+  mastery_level?: number;
+  last_studied?: string;
   created_at: string;
   updated_at: string;
 }
