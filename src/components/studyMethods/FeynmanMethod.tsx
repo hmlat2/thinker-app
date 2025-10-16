@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { CheckCircle, ArrowRight, ArrowLeft, Lightbulb, Target, BookOpen, MessageSquare } from 'lucide-react';
-import { StudyMaterial, FeynmanStep } from '../../types';
+import { StudyMaterial } from '../../types';
 
 interface FeynmanMethodProps {
   material: StudyMaterial;
-  onComplete: (notes: string, score: number) => void;
+  onComplete: (score: number) => void;
   onBack: () => void;
+}
+
+type FeynmanStepType = 'concept' | 'explain' | 'identify-gaps' | 'simplify';
+
+interface FeynmanStepData {
+  step: FeynmanStepType;
+  title: string;
+  description: string;
+  completed: boolean;
+  content: string;
+  notes: string;
 }
 
 const FeynmanMethod: React.FC<FeynmanMethodProps> = ({ material, onComplete, onBack }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [steps, setSteps] = useState<FeynmanStep[]>([
+  const [steps, setSteps] = useState<FeynmanStepData[]>([
     {
       step: 'concept',
       title: 'Choose a Concept',
@@ -70,8 +81,7 @@ const FeynmanMethod: React.FC<FeynmanMethodProps> = ({ material, onComplete, onB
       const completedSteps = steps.filter(step => step.completed).length;
       const hasDetailedNotes = steps.every(step => step.notes && step.notes.length > 20);
       const score = Math.round((completedSteps / steps.length) * 100) + (hasDetailedNotes ? 10 : 0);
-      const allNotes = steps.map(step => `${step.title}:\n${step.notes}`).join('\n\n');
-      onComplete(allNotes, Math.min(100, score));
+      onComplete(Math.min(100, score));
     }
   };
 

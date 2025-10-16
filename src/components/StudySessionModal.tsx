@@ -43,9 +43,8 @@ const StudySessionModal: React.FC<StudySessionModalProps> = ({
     }
   };
 
-  const handleMethodComplete = (notes: string, score: number) => {
+  const handleMethodComplete = (score: number) => {
     setSessionScore(score);
-    setSessionNotes(notes);
     setShowStudyMethod(false);
   };
 

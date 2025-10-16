@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
-import { CheckCircle, ArrowRight, ArrowLeft, BookOpen, HelpCircle, Eye, MessageSquare, RotateCcw } from 'lucide-react';
-import { StudyMaterial, SQ3RStep } from '../../types';
+import { CheckCircle, ArrowRight, ArrowLeft, BookOpen, HelpCircle, Eye, MessageSquare, RotateCcw, FileText, Lightbulb } from 'lucide-react';
+import { StudyMaterial } from '../../types';
 
 interface SQ3RMethodProps {
   material: StudyMaterial;
-  onComplete: (notes: string, score: number) => void;
+  onComplete: (score: number) => void;
   onBack: () => void;
+}
+
+type SQ3RStepType = 'survey' | 'question' | 'read' | 'recite' | 'review';
+
+interface SQ3RStepData {
+  step: SQ3RStepType;
+  title: string;
+  description: string;
+  completed: boolean;
+  content: string;
+  notes: string;
 }
 
 const SQ3RMethod: React.FC<SQ3RMethodProps> = ({ material, onComplete, onBack }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [steps, setSteps] = useState<SQ3RStep[]>([
+  const [steps, setSteps] = useState<SQ3RStepData[]>([
     {
       step: 'survey',
       title: 'Survey',
@@ -78,8 +89,7 @@ const SQ3RMethod: React.FC<SQ3RMethodProps> = ({ material, onComplete, onBack })
       // Calculate score based on completion
       const completedSteps = steps.filter(step => step.completed).length;
       const score = Math.round((completedSteps / steps.length) * 100);
-      const allNotes = steps.map(step => step.notes).join('\n\n');
-      onComplete(allNotes, score);
+      onComplete(score);
     }
   };
 
