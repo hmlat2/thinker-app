@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, BookOpen, FileText, Calendar, Target, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Brain, BookOpen, FileText, Calendar, Target, BarChart3, Settings, LogOut, Moon, HelpCircle, Lightbulb, BookMarked } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClasses } from '../hooks/useClasses';
 import { useStudyMaterials } from '../hooks/useStudyMaterials';
@@ -8,11 +8,12 @@ import StudyMaterialsView from './StudyMaterialsView';
 import NoteSummarizer from './NoteSummarizer';
 import FlashcardSystem from './FlashcardSystem';
 import StudyScheduler from './StudyScheduler';
+import StudyMethodLauncher from './StudyMethodLauncher';
 import UserMenu from './UserMenu';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'classes' | 'materials' | 'summarizer' | 'flashcards' | 'scheduler'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'classes' | 'materials' | 'summarizer' | 'flashcards' | 'scheduler' | 'sq3r' | 'quiz' | 'feynman' | 'sleep-review'>('dashboard');
 
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -21,6 +22,13 @@ const Dashboard: React.FC = () => {
     { id: 'summarizer', label: 'Note Summarizer', icon: Brain },
     { id: 'flashcards', label: 'Flashcards', icon: Target },
     { id: 'scheduler', label: 'Study Planner', icon: Calendar },
+  ];
+
+  const studyMethodItems = [
+    { id: 'sq3r', label: 'SQ3R Method', icon: BookMarked },
+    { id: 'quiz', label: 'Practice Quiz', icon: HelpCircle },
+    { id: 'feynman', label: 'Feynman Technique', icon: Lightbulb },
+    { id: 'sleep-review', label: 'Sleep Review', icon: Moon },
   ];
 
   const renderCurrentView = () => {
@@ -35,6 +43,11 @@ const Dashboard: React.FC = () => {
         return <FlashcardSystem />;
       case 'scheduler':
         return <StudyScheduler />;
+      case 'sq3r':
+      case 'quiz':
+      case 'feynman':
+      case 'sleep-review':
+        return <StudyMethodLauncher method={currentView} onBack={() => setCurrentView('dashboard')} />;
       default:
         return <DashboardHome />;
     }
@@ -56,25 +69,57 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <div className="space-y-2">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id as any)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors font-body ${
-                    currentView === item.id
-                      ? 'bg-brand-green text-white'
-                      : 'text-brand-slate hover:bg-brand-light/50 hover:text-brand-navy'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs font-semibold text-brand-slate/60 uppercase tracking-wider mb-2 px-4 font-body">
+                Main
+              </h3>
+              <div className="space-y-1">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setCurrentView(item.id as any)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors font-body ${
+                        currentView === item.id
+                          ? 'bg-brand-green text-white'
+                          : 'text-brand-slate hover:bg-brand-light/50 hover:text-brand-navy'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold text-brand-slate/60 uppercase tracking-wider mb-2 px-4 font-body">
+                Study Methods
+              </h3>
+              <div className="space-y-1">
+                {studyMethodItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setCurrentView(item.id as any)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors font-body ${
+                        currentView === item.id
+                          ? 'bg-brand-green text-white'
+                          : 'text-brand-slate hover:bg-brand-light/50 hover:text-brand-navy'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </nav>
 
