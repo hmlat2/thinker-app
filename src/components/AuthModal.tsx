@@ -18,10 +18,12 @@ const AuthModal: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+    if (isSignUp) {
+      if (!formData.username.trim()) {
+        newErrors.username = 'Username is required';
+      } else if (formData.username.length < 3) {
+        newErrors.username = 'Username must be at least 3 characters';
+      }
     }
 
     if (!formData.email.trim()) {
@@ -110,27 +112,29 @@ const AuthModal: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username Field */}
-            <div>
-              <label className="block text-sm font-medium text-brand-navy mb-2 font-body">
-                Username
-              </label>
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-green focus:border-transparent font-body transition-colors ${
-                  errors.username ? 'border-red-300 bg-red-50' : 'border-brand-sage/50'
-                }`}
-                placeholder="Choose a username"
-              />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600 font-body flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.username}
-                </p>
-              )}
-            </div>
+            {/* Username Field (Sign Up Only) */}
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-brand-navy mb-2 font-body">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-green focus:border-transparent font-body transition-colors ${
+                    errors.username ? 'border-red-300 bg-red-50' : 'border-brand-sage/50'
+                  }`}
+                  placeholder="Choose a username"
+                />
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600 font-body flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.username}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Email Field */}
             <div>
