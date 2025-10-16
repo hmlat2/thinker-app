@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Brain, BookOpen, FileText, Calendar, Target, BarChart3, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useClasses } from '../hooks/useClasses';
+import { useStudyMaterials } from '../hooks/useStudyMaterials';
 import ClassManager from './ClassManager';
 import StudyMaterialsView from './StudyMaterialsView';
 import NoteSummarizer from './NoteSummarizer';
@@ -95,6 +97,8 @@ const Dashboard: React.FC = () => {
 // Dashboard Home Component
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
+  const { classes } = useClasses();
+  const { materials } = useStudyMaterials();
 
   return (
     <div className="space-y-8">
@@ -114,7 +118,7 @@ const DashboardHome: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-brand-slate text-sm font-body">Classes</p>
-              <p className="text-2xl font-header font-bold text-brand-navy">5</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">{classes.length}</p>
             </div>
             <BookOpen className="w-8 h-8 text-brand-green" />
           </div>
@@ -124,7 +128,7 @@ const DashboardHome: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-brand-slate text-sm font-body">Study Materials</p>
-              <p className="text-2xl font-header font-bold text-brand-navy">23</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">{materials.length}</p>
             </div>
             <FileText className="w-8 h-8 text-brand-green" />
           </div>
@@ -134,7 +138,7 @@ const DashboardHome: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-brand-slate text-sm font-body">Flashcard Sets</p>
-              <p className="text-2xl font-header font-bold text-brand-navy">8</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">0</p>
             </div>
             <Target className="w-8 h-8 text-brand-green" />
           </div>
@@ -144,7 +148,7 @@ const DashboardHome: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-brand-slate text-sm font-body">Study Streak</p>
-              <p className="text-2xl font-header font-bold text-brand-navy">12 days</p>
+              <p className="text-2xl font-header font-bold text-brand-navy">0 days</p>
             </div>
             <Calendar className="w-8 h-8 text-brand-green" />
           </div>
@@ -194,46 +198,43 @@ const DashboardHome: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="card p-8">
-        <h2 className="text-2xl font-header font-bold text-brand-navy mb-6">Recent Activity</h2>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
-            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
-              <Brain className="w-5 h-5 text-brand-green" />
-            </div>
-            <div className="flex-1">
-              <p className="font-body font-medium text-brand-navy">
-                Summarized "Introduction to Organic Chemistry"
-              </p>
-              <p className="text-brand-slate/70 text-sm font-body">2 hours ago</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
-            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
-              <Target className="w-5 h-5 text-brand-green" />
-            </div>
-            <div className="flex-1">
-              <p className="font-body font-medium text-brand-navy">
-                Completed flashcard session: Biology Terms
-              </p>
-              <p className="text-brand-slate/70 text-sm font-body">5 hours ago</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
-            <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-brand-green" />
-            </div>
-            <div className="flex-1">
-              <p className="font-body font-medium text-brand-navy">
-                Created new class: Advanced Mathematics
-              </p>
-              <p className="text-brand-slate/70 text-sm font-body">1 day ago</p>
-            </div>
+      {(classes.length > 0 || materials.length > 0) && (
+        <div className="card p-8">
+          <h2 className="text-2xl font-header font-bold text-brand-navy mb-6">Recent Activity</h2>
+          <div className="space-y-4">
+            {classes.slice(0, 3).map((classItem) => (
+              <div key={classItem.id} className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
+                <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-brand-green" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-body font-medium text-brand-navy">
+                    Created class: {classItem.name}
+                  </p>
+                  <p className="text-brand-slate/70 text-sm font-body">
+                    {new Date(classItem.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {materials.slice(0, 3).map((material) => (
+              <div key={material.id} className="flex items-center space-x-4 p-4 bg-brand-light/50 rounded-lg">
+                <div className="w-10 h-10 bg-brand-green/20 rounded-full flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-brand-green" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-body font-medium text-brand-navy">
+                    Added material: {material.title}
+                  </p>
+                  <p className="text-brand-slate/70 text-sm font-body">
+                    {new Date(material.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Study Tips */}
       <div className="card p-8 bg-gradient-to-r from-brand-sage/10 to-brand-green/10">
