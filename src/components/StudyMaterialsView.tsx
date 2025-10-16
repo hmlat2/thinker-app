@@ -1,28 +1,33 @@
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Plus, 
-  Search, 
-  Filter, 
-  BookOpen, 
-  Brain, 
+import {
+  FileText,
+  Plus,
+  Search,
+  Filter,
+  BookOpen,
+  Brain,
   Target,
   Calendar,
   Tag,
   Edit3,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { useClasses } from '../hooks/useClasses';
 import { useStudyMaterials } from '../hooks/useStudyMaterials';
+import FileUploadModal from './FileUploadModal';
+import SubjectCard from './SubjectCard';
 
 const StudyMaterialsView: React.FC = () => {
-  const { classes } = useClasses();
+  const { classes, deleteClass } = useClasses();
   const { materials, createMaterial, updateMaterial, deleteMaterial } = useStudyMaterials();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<any>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadingForClass, setUploadingForClass] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -105,6 +110,32 @@ const StudyMaterialsView: React.FC = () => {
 
   const getClassInfo = (classId: string) => {
     return classes.find(c => c.id === classId);
+  };
+
+  const handleUploadForClass = (classItem: any) => {
+    setUploadingForClass({ id: classItem.id, name: classItem.name });
+    setUploadModalOpen(true);
+  };
+
+  const handleUploadComplete = async (files: File[]) => {
+    if (!uploadingForClass) return;
+
+    for (const file of files) {
+      await createMaterial({
+        title: file.name,
+        content: `AI-processed content from ${file.name}`,
+        type: 'note',
+        class_id: uploadingForClass.id,
+        tags: ['uploaded', 'ai-processed']
+      });
+    }
+
+    setUploadModalOpen(false);
+    setUploadingForClass(null);
+  };
+
+  const handleDeleteClass = async (classId: string) => {
+    await deleteClass(classId);
   };
 
   return (
@@ -343,6 +374,65 @@ const StudyMaterialsView: React.FC = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Classes Overview Section */}
+      <div className="card p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-header font-bold text-brand-navy">Your Classes</h2>
+          <p className="text-brand-slate font-body">
+            Upload materials directly to your classes
+          </p>
+        </div>
+
+        {classes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {classes.map((classItem) => {
+              const classMaterials = materials.filter(m => m.class_id === classItem.id);
+
+              return (
+                <SubjectCard
+                  key={classItem.id}
+                  subject={{
+                    id: classItem.id,
+                    name: classItem.name,
+                    description: classItem.description || '',
+                    color: classItem.color,
+                    icon: '📚',
+                    masteryLevel: classItem.mastery_level || 0,
+                    totalStudyTime: classItem.total_study_time || 0,
+                    lastStudied: classItem.last_studied || new Date().toISOString()
+                  }}
+                  materials={classMaterials}
+                  sessions={[]}
+                  onSelect={() => setSelectedClass(classItem.id)}
+                  onDelete={() => handleDeleteClass(classItem.id)}
+                  onUpload={() => handleUploadForClass(classItem)}
+                  isSelected={selectedClass === classItem.id}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <BookOpen className="w-12 h-12 text-brand-slate/50 mx-auto mb-3" />
+            <p className="text-brand-slate font-body">No classes yet. Create a class first!</p>
+          </div>
+        )}
+      </div>
+
+      {/* File Upload Modal */}
+      {uploadingForClass && (
+        <FileUploadModal
+          isOpen={uploadModalOpen}
+          onClose={() => {
+            setUploadModalOpen(false);
+            setUploadingForClass(null);
+          }}
+          subjectName={uploadingForClass.name}
+          subjectId={uploadingForClass.id}
+          onUploadComplete={handleUploadComplete}
+        />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, BookOpen, TrendingUp, Target } from 'lucide-react';
+import { Clock, BookOpen, TrendingUp, Target, Upload, Trash2 } from 'lucide-react';
 import { Subject, StudyMaterial, StudySession } from '../types';
 
 interface SubjectCardProps {
@@ -7,6 +7,8 @@ interface SubjectCardProps {
   materials: StudyMaterial[];
   sessions: StudySession[];
   onSelect: () => void;
+  onDelete: () => void;
+  onUpload: () => void;
   isSelected: boolean;
 }
 
@@ -15,6 +17,8 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
   materials,
   sessions,
   onSelect,
+  onDelete,
+  onUpload,
   isSelected
 }) => {
   const totalStudyTime = sessions.reduce((acc, session) => acc + session.duration, 0);
@@ -28,18 +32,47 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
     ? Math.round(sessions.reduce((acc, session) => acc + (session.score || 0), 0) / sessions.length)
     : 0;
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete "${subject.name}"? This will also delete all associated materials and study sessions.`)) {
+      onDelete();
+    }
+  };
+
+  const handleUpload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUpload();
+  };
+
   return (
     <div
       onClick={onSelect}
-      className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-        isSelected 
-          ? 'ring-2 ring-brand-green bg-brand-sage/5' 
+      className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg relative group ${
+        isSelected
+          ? 'ring-2 ring-brand-green bg-brand-sage/5'
           : 'hover:border-brand-green'
       }`}
     >
+      <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleUpload}
+          className="p-2 bg-white hover:bg-brand-green hover:text-white text-brand-green rounded-lg shadow-md transition-all"
+          title="Upload materials"
+        >
+          <Upload className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleDelete}
+          className="p-2 bg-white hover:bg-red-500 hover:text-white text-red-500 rounded-lg shadow-md transition-all"
+          title="Delete subject"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div 
+          <div
             className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl font-bold"
             style={{ backgroundColor: subject.color }}
           >
@@ -54,7 +87,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
             </p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right mr-20">
           <div className="text-2xl font-header font-bold text-brand-green">
             {subject.masteryLevel}%
           </div>
