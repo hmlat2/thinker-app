@@ -87,6 +87,55 @@ const NoteSummarizer: React.FC = () => {
     setInputText('');
     setSummaryResult(null);
     setCopied(false);
+    setShowClassSelect(false);
+    setSelectedClassId('');
+    setSaved(false);
+  };
+
+  const handleSaveToMaterials = async () => {
+    if (!summaryResult || !selectedClassId) {
+      setShowClassSelect(true);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      console.log('Attempting to save material...');
+      console.log('Selected class ID:', selectedClassId);
+      console.log('Summary result:', summaryResult);
+
+      const materialContent = `# Summary\n\n${summaryResult.summary}\n\n## Key Points\n\n${summaryResult.keyPoints.map((point, i) => `${i + 1}. ${point}`).join('\n')}\n\n## Key Concepts\n\n${summaryResult.concepts.join(', ')}`;
+
+      const materialData = {
+        title: `Summary - ${new Date().toLocaleDateString()}`,
+        content: materialContent,
+        type: 'summary' as const,
+        class_id: selectedClassId,
+        tags: summaryResult.concepts
+      };
+
+      console.log('Material data to save:', materialData);
+
+      const result = await createMaterial(materialData);
+
+      console.log('Save result:', result);
+
+      if (result) {
+        setSaved(true);
+        alert('Successfully saved to Study Materials!');
+        setTimeout(() => {
+          setSaved(false);
+          setShowClassSelect(false);
+        }, 2000);
+      } else {
+        throw new Error('Failed to create material - no result returned');
+      }
+    } catch (error: any) {
+      console.error('Error saving to study materials:', error);
+      alert(`Failed to save to study materials: ${error.message || 'Unknown error'}. Check the console for details.`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
