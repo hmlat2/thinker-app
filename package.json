@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "migrate:bolt-to-supabase": "node scripts/migrate_bolt_to_supabase.js",
+  "migrate:postgres-to-supabase": "node scripts/migrate_postgres_to_supabase.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

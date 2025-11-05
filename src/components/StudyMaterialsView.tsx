@@ -17,6 +17,8 @@ import { useClasses } from '../hooks/useClasses';
 import { useStudyMaterials } from '../hooks/useStudyMaterials';
 import FileUploadModal from './FileUploadModal';
 import SubjectCard from './SubjectCard';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const StudyMaterialsView: React.FC = () => {
   const { classes, deleteClass } = useClasses();
@@ -35,6 +37,8 @@ const StudyMaterialsView: React.FC = () => {
     class_id: '',
     tags: [] as string[]
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { user } = useAuth();
 
   const materialTypes = [
     { value: 'note', label: 'Notes', icon: FileText },
@@ -55,12 +59,53 @@ const StudyMaterialsView: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingMaterial) {
-      await updateMaterial(editingMaterial.id, formData);
-      setEditingMaterial(null);
-    } else {
-      await createMaterial(formData);
-      setShowCreateForm(false);
+    try {
+      let finalData: any = { ...formData };
+
+      // If a file is selected, attempt to upload it to Supabase Storage and
+      // store the public URL in the material content. We keep the type as the
+      // selected material type (note/summary/etc) and add tags to indicate file.
+      if (selectedFile && user) {
+        const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'file';
+        const filePath = `${user.id}/${Date.now()}_${selectedFile.name}`;
+
+        try {
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('materials')
+            .upload(filePath, selectedFile as any);
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = await supabase.storage.from('materials').getPublicUrl(filePath);
+          const publicUrl = urlData?.publicUrl || '';
+
+          // Store uploaded file URL in dedicated file_url column and keep any
+          // textarea content the user provided (if any).
+          finalData.file_url = publicUrl;
+          finalData.tags = Array.from(new Set([...(finalData.tags || []), 'uploaded', fileExt]));
+        } catch (err) {
+          console.error('File upload failed, falling back to inline material:', err);
+          finalData.content = `Uploaded: ${selectedFile.name} (upload failed)`;
+          finalData.tags = Array.from(new Set([...(finalData.tags || []), 'uploaded', 'upload-failed']));
+        }
+      }
+
+      if (editingMaterial) {
+        await updateMaterial(editingMaterial.id, finalData);
+        setEditingMaterial(null);
+      } else {
+        await createMaterial(finalData);
+        setShowCreateForm(false);
+      }
+    } finally {
+      setFormData({
+        title: '',
+        content: '',
+        type: 'note',
+        class_id: '',
+        tags: []
+      });
+      setSelectedFile(null);
     }
     
     setFormData({
@@ -121,6 +166,30 @@ const StudyMaterialsView: React.FC = () => {
     if (!uploadingForClass) return;
 
     for (const file of files) {
+      // Try to upload each file to Supabase storage and record file_url.
+      if (user) {
+        const filePath = `${user.id}/${Date.now()}_${file.name}`;
+        try {
+          const { error: uploadError } = await supabase.storage.from('materials').upload(filePath, file as any);
+          if (uploadError) throw uploadError;
+          const { data: urlData } = await supabase.storage.from('materials').getPublicUrl(filePath);
+          const publicUrl = urlData?.publicUrl || '';
+
+          await createMaterial({
+            title: file.name,
+            content: `AI-processed content from ${file.name}`,
+            file_url: publicUrl,
+            type: 'note',
+            class_id: uploadingForClass.id,
+            tags: ['uploaded', 'ai-processed']
+          });
+          continue;
+        } catch (err) {
+          console.error('Upload for class-level file failed, falling back to inline:', err);
+        }
+      }
+
+      // Fallback: create material with generated content only
       await createMaterial({
         title: file.name,
         content: `AI-processed content from ${file.name}`,
@@ -273,9 +342,28 @@ const StudyMaterialsView: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 className="w-full px-4 py-3 border border-brand-sage/50 rounded-lg focus:ring-2 focus:ring-brand-green focus:border-transparent font-body"
                 placeholder="Enter your study material content..."
-                rows={8}
-                required
+                rows={6}
+                required={!selectedFile}
               />
+
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-brand-navy mb-2 font-body">Optional file upload</label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                  onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                  className="font-body"
+                />
+                {selectedFile && (
+                  <div className="mt-2 text-sm text-brand-slate font-body flex items-center justify-between">
+                    <div>
+                      <strong>{selectedFile.name}</strong>
+                      <div className="text-xs">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                    <button type="button" onClick={() => setSelectedFile(null)} className="text-red-500 text-sm ml-4">Remove</button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex space-x-4">
@@ -360,7 +448,13 @@ const StudyMaterialsView: React.FC = () => {
                 </p>
                 
                 <p className="text-brand-slate text-sm font-body mb-4 line-clamp-3">
-                  {material.content}
+                  {material.file_url ? (
+                    <a href={material.file_url} target="_blank" rel="noopener noreferrer" className="text-brand-green underline">
+                      View file
+                    </a>
+                  ) : (
+                    material.content
+                  )}
                 </p>
                 
                 <div className="flex items-center justify-between text-xs text-brand-slate/60 font-body">

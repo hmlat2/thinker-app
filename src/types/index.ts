@@ -18,6 +18,7 @@ export interface StudyMaterial {
   id: string;
   title: string;
   content: string;
+  file_url?: string;
   type: 'note' | 'summary' | 'flashcard' | 'quiz';
   class_id: string;
   user_id: string;
@@ -60,29 +61,6 @@ export interface Subject {
   masteryLevel: number; // 0-100
 }
 
-export interface StudyMaterial {
-  id: string;
-  subjectId: string;
-  title: string;
-  content: string;
-  type: 'text' | 'pdf' | 'video' | 'image';
-  createdAt: Date;
-  lastReviewed?: Date;
-  difficulty: 'easy' | 'medium' | 'hard';
-  tags: string[];
-}
-
-export interface StudySession {
-  id: string;
-  subjectId: string;
-  materialId?: string;
-  method: StudyMethod;
-  startTime: Date;
-  endTime?: Date;
-  duration: number; // in minutes
-  score?: number; // 0-100
-  notes?: string;
-}
 
 export type StudyMethod = 
   | 'sq3r' 
