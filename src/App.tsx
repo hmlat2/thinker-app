@@ -1,10 +1,9 @@
 import React from 'react';
 import { useAuth } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -15,10 +14,6 @@ function App() {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <AuthModal />;
   }
 
   return <Dashboard />;

@@ -1,106 +1,45 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useLocalStorage } from './useLocalStorage';
 import { StudyClass } from '../types';
-import { useAuth } from '../contexts/AuthContext';
 
 export const useClasses = () => {
-  const [classes, setClasses] = useState<StudyClass[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
-  const fetchClasses = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('study_classes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setClasses(data || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [classes, setClasses] = useLocalStorage<StudyClass[]>('study_classes', []);
 
   const createClass = async (classData: Omit<StudyClass, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) {
-      console.error('No user found when creating class');
-      return null;
-    }
+    const newClass: StudyClass = {
+      ...classData,
+      id: crypto.randomUUID(),
+      user_id: 'local-user',
+      total_study_time: 0,
+      mastery_level: 0,
+      last_studied: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    try {
-      console.log('Creating class with data:', { ...classData, user_id: user.id });
-
-      const { data, error } = await supabase
-        .from('study_classes')
-        .insert([{ ...classData, user_id: user.id }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Class created successfully:', data);
-      setClasses(prev => [data, ...prev]);
-      return data;
-    } catch (error) {
-      console.error('Error creating class:', error);
-      alert(`Failed to create class: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return null;
-    }
+    setClasses(prev => [newClass, ...prev]);
+    return newClass;
   };
 
   const updateClass = async (id: string, updates: Partial<StudyClass>) => {
-    try {
-      const { data, error } = await supabase
-        .from('study_classes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+    const updatedClass = classes.find(c => c.id === id);
+    if (!updatedClass) return null;
 
-      if (error) throw error;
-      setClasses(prev => prev.map(c => c.id === id ? data : c));
-      return data;
-    } catch (error) {
-      console.error('Error updating class:', error);
-      return null;
-    }
+    const newClass = { ...updatedClass, ...updates, updated_at: new Date().toISOString() };
+    setClasses(prev => prev.map(c => c.id === id ? newClass : c));
+    return newClass;
   };
 
   const deleteClass = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('study_classes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setClasses(prev => prev.filter(c => c.id !== id));
-      return true;
-    } catch (error) {
-      console.error('Error deleting class:', error);
-      return false;
-    }
+    setClasses(prev => prev.filter(c => c.id !== id));
+    return true;
   };
-
-  useEffect(() => {
-    fetchClasses();
-  }, [user]);
 
   return {
     classes,
-    loading,
+    loading: false,
     createClass,
     updateClass,
     deleteClass,
-    refetch: fetchClasses
+    refetch: () => {}
   };
 };

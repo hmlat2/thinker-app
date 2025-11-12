@@ -18,7 +18,6 @@ import { useStudyMaterials } from '../hooks/useStudyMaterials';
 import FileUploadModal from './FileUploadModal';
 import SubjectCard from './SubjectCard';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 const StudyMaterialsView: React.FC = () => {
   const { classes, deleteClass } = useClasses();
@@ -62,32 +61,10 @@ const StudyMaterialsView: React.FC = () => {
     try {
       let finalData: any = { ...formData };
 
-      // If a file is selected, attempt to upload it to Supabase Storage and
-      // store the public URL in the material content. We keep the type as the
-      // selected material type (note/summary/etc) and add tags to indicate file.
       if (selectedFile && user) {
         const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'file';
-        const filePath = `${user.id}/${Date.now()}_${selectedFile.name}`;
-
-        try {
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('materials')
-            .upload(filePath, selectedFile as any);
-
-          if (uploadError) throw uploadError;
-
-          const { data: urlData } = await supabase.storage.from('materials').getPublicUrl(filePath);
-          const publicUrl = urlData?.publicUrl || '';
-
-          // Store uploaded file URL in dedicated file_url column and keep any
-          // textarea content the user provided (if any).
-          finalData.file_url = publicUrl;
-          finalData.tags = Array.from(new Set([...(finalData.tags || []), 'uploaded', fileExt]));
-        } catch (err) {
-          console.error('File upload failed, falling back to inline material:', err);
-          finalData.content = `Uploaded: ${selectedFile.name} (upload failed)`;
-          finalData.tags = Array.from(new Set([...(finalData.tags || []), 'uploaded', 'upload-failed']));
-        }
+        finalData.content = `File: ${selectedFile.name}`;
+        finalData.tags = Array.from(new Set([...(finalData.tags || []), 'uploaded', fileExt]));
       }
 
       if (editingMaterial) {
@@ -166,30 +143,6 @@ const StudyMaterialsView: React.FC = () => {
     if (!uploadingForClass) return;
 
     for (const file of files) {
-      // Try to upload each file to Supabase storage and record file_url.
-      if (user) {
-        const filePath = `${user.id}/${Date.now()}_${file.name}`;
-        try {
-          const { error: uploadError } = await supabase.storage.from('materials').upload(filePath, file as any);
-          if (uploadError) throw uploadError;
-          const { data: urlData } = await supabase.storage.from('materials').getPublicUrl(filePath);
-          const publicUrl = urlData?.publicUrl || '';
-
-          await createMaterial({
-            title: file.name,
-            content: `AI-processed content from ${file.name}`,
-            file_url: publicUrl,
-            type: 'note',
-            class_id: uploadingForClass.id,
-            tags: ['uploaded', 'ai-processed']
-          });
-          continue;
-        } catch (err) {
-          console.error('Upload for class-level file failed, falling back to inline:', err);
-        }
-      }
-
-      // Fallback: create material with generated content only
       await createMaterial({
         title: file.name,
         content: `AI-processed content from ${file.name}`,
